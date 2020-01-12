@@ -71,7 +71,14 @@ struct tcp_header {
 	unsigned long ack_num;
 	unsigned char offset : 4;
 	unsigned char reserved : 4;
-	unsigned char tcp_flag;
+	unsigned char tcp_flag_fin : 1;
+	unsigned char tcp_flag_syn : 1;
+	unsigned char tcp_flag_rst : 1;
+	unsigned char tcp_flag_psh : 1;
+	unsigned char tcp_flag_ack : 1;
+	unsigned char tcp_flag_urg : 1;
+	unsigned char tcp_flag_ecn : 1;
+	unsigned char tcp_flag_cwr : 1;
 	unsigned short win_size;
 	unsigned short checksum;
 	unsigned short urg_pointer;
@@ -164,7 +171,7 @@ int main(int argc, char **argv) {
 				ah = (struct arp_header *)pkt_data + 14;
 				if (ah->target_ip[3] != ATTACK_IP[3])
 				{
-					if (th->tcp_flag == 0x002) {
+					if (th->tcp_flag_syn == TRUE) {
 						//backwarding
 						unsigned char temp_ip[IP_ADDR_LEN];
 						memcpy(temp_ip, ih->ip_dst_addr, 14);
@@ -180,7 +187,10 @@ int main(int argc, char **argv) {
 						//tcp port ¹Ù²ñ
 						th->ack_num=1;
 						printf("acknowledgement Number = 1\n");
-						memcpy(th->tcp_flag, 0x014, sizeof(th->tcp_flag));
+						th->tcp_flag_syn = FALSE;
+						th->tcp_flag_rst = TRUE;
+						th->tcp_flag_ack = TRUE;
+
 						printf("flag = rst+ack \n");
 						//ip checksum
 						memcpy(ih->ip_checksum, ip_checksum_result, sizeof(ih->ip_checksum));
